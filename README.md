@@ -3,7 +3,17 @@
 
  How to build
 
- clone this repository,navigate to n26 directory  and run "mvn clean package" then "mvn spring-boot:run" 
+ Installation
+============
+The following commands will install the n26 project into the executable
+path with the script named as "n26". It also installs all its dependencies
+
+```bash
+>> git clone https://github.com/farooqarshad/Code-Test.git
+>> cd n26
+>> mvn clean package
+>> mvn spring-boot:run
+```
 
 
 
