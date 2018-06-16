@@ -3,7 +3,7 @@
 
  How to build
 
- clone this repository and run mvn clean install or mvn package and inside target folder run jar file 
+ clone this repository and run "mvn spring-boot:run" 
 
 
 
