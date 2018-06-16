@@ -3,7 +3,7 @@
 
  How to build
 
- clone this repository and run "mvn spring-boot:run" 
+ clone this repository,navigate to n26 directory  and run "mvn clean paackage" then "mvn spring-boot:run" 
 
 
 
