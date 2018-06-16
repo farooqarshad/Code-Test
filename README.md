@@ -1,5 +1,3 @@
-# n26-challenge
-
  Installation
 ============
 The following commands will install the n26 project into the executable
