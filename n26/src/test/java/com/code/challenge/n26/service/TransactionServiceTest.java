@@ -3,7 +3,6 @@ package com.code.challenge.n26.service;
 
 import java.time.LocalDateTime;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +12,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.code.challenge.n26.exception.TransactionExpiredException;
 import com.code.challenge.n26.exception.TransactionOutOfFutureWindow;
-import com.code.challenge.n26.persistence.entity.Transaction;
 import com.code.challenge.n26.presentation.json.TransactionPostJson;
 import com.code.challenge.n26.util.DateUtil;
 

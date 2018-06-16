@@ -15,7 +15,6 @@ import com.code.challenge.n26.exception.TransactionExpiredException;
 import com.code.challenge.n26.exception.TransactionOutOfFutureWindow;
 import com.code.challenge.n26.persistence.entity.Statistic;
 import com.code.challenge.n26.persistence.entity.Transaction;
-import com.code.challenge.n26.util.DateUtil;
 
 @SpringBootTest
 @RunWith(SpringRunner.class)

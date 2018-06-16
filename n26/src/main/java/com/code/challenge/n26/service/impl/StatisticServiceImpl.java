@@ -3,16 +3,9 @@ package com.code.challenge.n26.service.impl;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.code.challenge.n26.exception.TransactionExpiredException;
@@ -34,14 +27,7 @@ public class StatisticServiceImpl implements StatisticService {
 	// Lock for ADD / REMOVE
 	private Object LOCK = new Object();
 	
-	// Space Complexity: O(${windowInMs} / 1000 + ${removeExpiredStatisticsInMs} / 1000) -> O(1)
-	private Map<Long, Statistic> statisticHistory;
-	
-	
 	private List<Transaction> transactions;
-
-	// Space Complexity: O(${windowInMs} / 1000 + ${removeExpiredStatisticsInMs} / 1000) -> O(1)
-	private Queue<Long> statisticTimestamps;
 	
 	@Value("${statisticService.windowInMs}")
 	private Long windowInMs;
@@ -49,8 +35,6 @@ public class StatisticServiceImpl implements StatisticService {
 	Statistic statistic=null;
 	
 	public StatisticServiceImpl() {
-		 this.statisticHistory = new ConcurrentHashMap<Long, Statistic>();
-		 this.statisticTimestamps = new PriorityBlockingQueue<Long>();
 		 this.transactions = new ArrayList<Transaction>();
 		 this.statistic= this.createInitStatistic();
 	}
@@ -72,35 +56,7 @@ public class StatisticServiceImpl implements StatisticService {
 		statistic.setCount(0l);
 		return statistic;
 	}
-	
-	/**
-	 * 
-	 * Remove expired statistics
-	 * 
-	 * Time complexity: O(statisticTimestamps.size() * log statisticTimestamps.size()) -> O(1)
-	 * 
-	 */
-	@Scheduled(fixedDelayString = "${statisticService.removeExpiredStatisticsInMs}")
-	private void removeExpiredStatistics() {
 
-		Long currentTimestamp = DateUtil.converToTimeStamp(LocalDateTime.now());
-		
-		if (this.statisticTimestamps.isEmpty() || this.statisticTimestamps.peek() >= currentTimestamp) return;
-		
-		synchronized(LOCK) {
-		
-			// O(n) - Where n = statisticTimestamps.size()
-			while(!this.statisticTimestamps.isEmpty() && this.statisticTimestamps.peek() < currentTimestamp) {
-				
-				// O(log n) - Where n = statisticTimestamps.size()
-				Long key = this.statisticTimestamps.poll();
-				
-				// O(1)
-				this.statisticHistory.remove(key);
-			}
-		}
-	}
-	
 	/**
 	 * 
 	 * Add statistic from transaction
@@ -153,25 +109,5 @@ public class StatisticServiceImpl implements StatisticService {
 	@Override
 	public Statistic findCurrent() {
 		return statistic;
-	}
-	
-	
-	/**
-	 * 
-	 * Get all statistics
-	 * 
-	 * Time complexity: O(statisticHistory.values().size() log statisticHistory.values().size()) -> O(1)
-	 * 
-	 */
-	@Override
-	public List<Statistic> findAll() {
-		
-		List<Statistic> result = new ArrayList<Statistic>(this.statisticHistory.values());
-		
-		// O(n log  n) - Where n = statisticHistory.values().size()
-		result.sort((Statistic o1, Statistic o2)->o1.getDate().compareTo(o2.getDate()));
-		
-		return result;
-	}
-		
+	}		
 }
