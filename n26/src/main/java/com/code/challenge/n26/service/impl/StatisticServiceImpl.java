@@ -4,9 +4,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,6 +36,9 @@ public class StatisticServiceImpl implements StatisticService {
 	
 	// Space Complexity: O(${windowInMs} / 1000 + ${removeExpiredStatisticsInMs} / 1000) -> O(1)
 	private Map<Long, Statistic> statisticHistory;
+	
+	
+	private List<Transaction> transactions;
 
 	// Space Complexity: O(${windowInMs} / 1000 + ${removeExpiredStatisticsInMs} / 1000) -> O(1)
 	private Queue<Long> statisticTimestamps;
@@ -40,9 +46,13 @@ public class StatisticServiceImpl implements StatisticService {
 	@Value("${statisticService.windowInMs}")
 	private Long windowInMs;
 	
+	Statistic statistic=null;
+	
 	public StatisticServiceImpl() {
 		 this.statisticHistory = new ConcurrentHashMap<Long, Statistic>();
 		 this.statisticTimestamps = new PriorityBlockingQueue<Long>();
+		 this.transactions = new ArrayList<Transaction>();
+		 this.statistic= this.createInitStatistic();
 	}
 	
 	/**
@@ -53,11 +63,11 @@ public class StatisticServiceImpl implements StatisticService {
 	 * 
 	 * @return Statistic with init values
 	 */
-	private Statistic createInitStatistic(Long timestamp) {
+	private Statistic createInitStatistic() {
 		Statistic statistic = new Statistic();
-		statistic.setDate(DateUtil.convertToLocalDateTime(timestamp));
-		statistic.setMax(Double.MIN_VALUE);
-		statistic.setMin(Double.MAX_VALUE);
+		statistic.setDate(LocalDateTime.now());
+		statistic.setMax(0d);
+		statistic.setMin(0d);
 		statistic.setSum(0.0);
 		statistic.setCount(0l);
 		return statistic;
@@ -107,35 +117,29 @@ public class StatisticServiceImpl implements StatisticService {
 		
 		if (transactionTimestamp + windowInMs < currentTimestamp) throw new TransactionExpiredException();
 		if (currentTimestamp + windowInMs < transactionTimestamp) throw new TransactionOutOfFutureWindow();
-		
 		synchronized(LOCK) {
+			//ADD Latest Transaction
+			transactions.add(transaction);
 			
-			// O(n) - Where n = ${windowInMs}/1000
-			for(Long i = currentTimestamp; i < transactionTimestamp + windowInMs; i+=1000) {
+			//Filter out the old ones
+			List<Transaction> trs=transactions.stream()
+					.filter(tran -> DateUtil.converToTimeStamp(tran.getDate())+windowInMs <currentTimestamp)
+					.collect(Collectors.toList());
+			
+				int count =trs.size();
+				double sum = trs.stream().mapToDouble(d-> d.getAmount()).sum();
+				double max = trs.stream().mapToDouble(d -> d.getAmount()).max().getAsDouble();
+				double min = trs.stream().mapToDouble(d -> d.getAmount()).min().getAsDouble();
+				double avg = sum / count;
 				
-				// O(1)
-				Statistic statistic = this.statisticHistory.get(i);
+				statistic = this.createInitStatistic();
+				statistic.setAvg(avg);
+				statistic.setSum(sum);;
+				statistic.setMax(max);
+				statistic.setMin(min);
+				//Reset the list to store only transaction for last 60 secs
+				transactions=trs;
 				
-				if (statistic == null) {
-					
-					// O(1)
-					statistic = this.createInitStatistic(i);
-				
-					// O(1)
-					this.statisticHistory.put(i, statistic);
-					
-					// O(log n) - Where n = statisticTimestamps.size()
-					this.statisticTimestamps.add(i);
-				}
-	
-				if (transaction.getAmount() > statistic.getMax()) statistic.setMax(transaction.getAmount());
-				if (transaction.getAmount() < statistic.getMin()) statistic.setMin(transaction.getAmount());
-				
-				statistic.setSum( statistic.getSum() + transaction.getAmount() );
-				statistic.setCount( statistic.getCount() + 1);
-				statistic.setAvg( statistic.getSum() / statistic.getCount() );
-			}
-		
 		}
 	}
 	
@@ -148,14 +152,6 @@ public class StatisticServiceImpl implements StatisticService {
 	 */
 	@Override
 	public Statistic findCurrent() {
-		
-		Long currentTimestamp = DateUtil.converToTimeStamp(LocalDateTime.now());
-		
-		// O(1)
-		Statistic statistic = this.statisticHistory.get(currentTimestamp);
-		
-		if (statistic == null) statistic = this.createInitStatistic(currentTimestamp);
-		
 		return statistic;
 	}
 	
