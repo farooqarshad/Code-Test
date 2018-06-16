@@ -1,9 +1,9 @@
 # n26-challenge
 
 
-# How to build
- -clone this repository and run mvn clean install or mvn package
- -inside target folder run jar file 
+ How to build
+
+ clone this repository and run mvn clean install or mvn package and inside target folder run jar file 
 
 
 
