@@ -71,6 +71,7 @@ public class StatisticServiceImpl implements StatisticService {
 		Long currentTimestamp = DateUtil.converToTimeStamp(LocalDateTime.now());
 		Long transactionTimestamp = DateUtil.converToTimeStamp(transaction.getDate());
 		
+		System.out.println("currentTimestamp = "+currentTimestamp + ": transactionTimestamp + windowInMs = "+transactionTimestamp + windowInMs + " : currentTimestamp + windowInMs = "+currentTimestamp + windowInMs + " : Transaction : "+transactionTimestamp);
 		if (transactionTimestamp + windowInMs < currentTimestamp) throw new TransactionExpiredException();
 		if (currentTimestamp + windowInMs < transactionTimestamp) throw new TransactionOutOfFutureWindow();
 		synchronized(LOCK) {
@@ -79,7 +80,7 @@ public class StatisticServiceImpl implements StatisticService {
 			
 			//Filter out the old ones
 			List<Transaction> trs=transactions.stream()
-					.filter(tran -> DateUtil.converToTimeStamp(tran.getDate())+windowInMs <currentTimestamp)
+					.filter(tran -> (transactionTimestamp+windowInMs) >= currentTimestamp)
 					.collect(Collectors.toList());
 			
 				int count =trs.size();

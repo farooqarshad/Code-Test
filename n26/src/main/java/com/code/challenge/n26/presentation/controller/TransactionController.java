@@ -27,10 +27,8 @@ public class TransactionController {
 	public ResponseEntity<Transaction> post(@RequestBody @Valid TransactionPostJson bodyJson) {
 
 		try {
-			Transaction transaction = this.transactionService.process(bodyJson);
-			
-			ResponseEntity<Transaction> response = new ResponseEntity<Transaction>(transaction, HttpStatus.CREATED);
-			return response; 
+			this.transactionService.process(bodyJson);
+			return new ResponseEntity<Transaction>(HttpStatus.NO_CONTENT);
 		} 
 		catch (TransactionExpiredException | TransactionOutOfFutureWindow e) {
 			return new ResponseEntity<Transaction>(HttpStatus.NO_CONTENT);
